@@ -1,9 +1,9 @@
 import pkg from 'pg';
 const { Client } = pkg;
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,4 +32,4 @@ async function init() {
   }
 }
 
-init();
+await init();

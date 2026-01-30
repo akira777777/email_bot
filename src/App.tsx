@@ -1,5 +1,5 @@
 import { useMemo, useEffect, Suspense, lazy } from "react";
-import { EmailStats } from "@/types";
+import { Contact, EmailTemplate, EmailStats } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
@@ -22,6 +22,12 @@ const ContactsList = lazy(() => import("@/components/contacts/ContactsList").the
 const EmailTemplates = lazy(() => import("@/components/templates/EmailTemplates").then(m => ({ default: m.EmailTemplates })));
 const CampaignSender = lazy(() => import("@/components/campaign/CampaignSender").then(m => ({ default: m.CampaignSender })));
 const Inbox = lazy(() => import("@/components/inbox/Inbox").then(m => ({ default: m.Inbox })));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center p-12">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 export default function App() {
   const { toast } = useToast();
@@ -89,6 +95,108 @@ export default function App() {
     }
   };
 
+  const handleAddContact = async (data: Omit<Contact, 'id' | 'createdAt' | 'status'>) => {
+    try {
+      await addContact(data);
+      toast({
+        title: "Успех",
+        description: "Контакт добавлен",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить контакт",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    try {
+      await deleteContact(id);
+      toast({
+        title: "Успех",
+        description: "Контакт удален",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить контакт",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportContacts = async (data: Omit<Contact, 'id' | 'createdAt' | 'status'>[]) => {
+    try {
+      await importContacts(data);
+      toast({
+        title: "Успех",
+        description: `Импортировано ${data.length} контактов`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось импортировать контакты",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddTemplate = async (data: Omit<EmailTemplate, 'id' | 'createdAt'>) => {
+    try {
+      await addTemplate(data);
+      toast({
+        title: "Успех",
+        description: "Шаблон создан",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать шаблон",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditTemplate = async (id: string, data: Omit<EmailTemplate, 'id' | 'createdAt'>) => {
+    try {
+      await editTemplate(id, data);
+      toast({
+        title: "Успех",
+        description: "Шаблон обновлен",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить шаблон",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      await deleteTemplate(id);
+      toast({
+        title: "Успех",
+        description: "Шаблон удален",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить шаблон",
+        variant: "destructive",
+      });
+    }
+  };
+
   const selectContact = (id: string) => {
     setSelectedContacts(
       selectedContacts.includes(id) 
@@ -105,12 +213,6 @@ export default function App() {
       setSelectedContacts(safeContacts.map(c => c.id));
     }
   };
-
-  const LoadingFallback = () => (
-    <div className="flex items-center justify-center p-12">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -211,9 +313,9 @@ export default function App() {
             <TabsContent value="contacts" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <ContactsList
                 contacts={contacts}
-                onAddContact={addContact}
-                onDeleteContact={deleteContact}
-                onImportContacts={importContacts}
+                onAddContact={handleAddContact}
+                onDeleteContact={handleDeleteContact}
+                onImportContacts={handleImportContacts}
                 selectedContacts={selectedContacts}
                 onSelectContact={selectContact}
                 onSelectAll={selectAllContacts}
@@ -224,9 +326,9 @@ export default function App() {
             <TabsContent value="templates" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <EmailTemplates
                 templates={templates}
-                onAddTemplate={addTemplate}
-                onEditTemplate={editTemplate}
-                onDeleteTemplate={deleteTemplate}
+                onAddTemplate={handleAddTemplate}
+                onEditTemplate={handleEditTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
                 selectedTemplate={selectedTemplate}
                 onSelectTemplate={setSelectedTemplate}
               />
@@ -235,9 +337,9 @@ export default function App() {
                 <div className="lg:col-span-2">
                   <ContactsList
                     contacts={contacts}
-                    onAddContact={addContact}
-                    onDeleteContact={deleteContact}
-                    onImportContacts={importContacts}
+                    onAddContact={handleAddContact}
+                    onDeleteContact={handleDeleteContact}
+                    onImportContacts={handleImportContacts}
                     selectedContacts={selectedContacts}
                     onSelectContact={selectContact}
                     onSelectAll={selectAllContacts}

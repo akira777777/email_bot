@@ -17,14 +17,16 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 
+type ContactInput = Omit<Contact, "id" | "createdAt" | "status">;
+
 interface ContactsListProps {
-  contacts: Contact[];
-  onAddContact: (contact: Omit<Contact, "id" | "createdAt" | "status">) => void;
-  onDeleteContact: (id: string) => void;
-  onImportContacts: (contacts: Omit<Contact, "id" | "createdAt" | "status">[]) => void;
-  selectedContacts: string[];
-  onSelectContact: (id: string) => void;
-  onSelectAll: () => void;
+  readonly contacts: Contact[];
+  readonly onAddContact: (contact: ContactInput) => void;
+  readonly onDeleteContact: (id: string) => void;
+  readonly onImportContacts: (contacts: ContactInput[]) => void;
+  readonly selectedContacts: string[];
+  readonly onSelectContact: (id: string) => void;
+  readonly onSelectAll: () => void;
 }
 
 const statusConfig = {
@@ -168,7 +170,7 @@ export function ContactsList({
             phone: row.phone || row.Phone || row["Телефон"],
             notes: row.notes || row.Notes || row["Заметки"],
           }))
-          .filter(c => c.email && c.companyName) as Omit<Contact, "id" | "createdAt" | "status">[];
+          .filter(c => c.email && c.companyName) as ContactInput[];
 
         if (imported.length > 0) {
           onImportContacts(imported);

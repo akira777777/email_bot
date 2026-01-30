@@ -6,11 +6,11 @@ import { Send, Users, FileText, CheckCircle2, Loader2, AlertCircle } from "lucid
 import { cn } from "@/lib/utils";
 
 interface CampaignSenderProps {
-  contacts: Contact[];
-  selectedContacts: string[];
-  templates: EmailTemplate[];
-  selectedTemplate: string | null;
-  onSendCampaign: (contactIds: string[], templateId: string) => Promise<void>;
+  readonly contacts: Contact[];
+  readonly selectedContacts: string[];
+  readonly templates: EmailTemplate[];
+  readonly selectedTemplate: string | null;
+  readonly onSendCampaign: (contactIds: string[], templateId: string) => Promise<void>;
 }
 
 export function CampaignSender({

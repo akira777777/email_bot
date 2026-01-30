@@ -63,23 +63,35 @@ export const InboxService = {
   },
 
   async approveDraft(id, content) {
+    let result;
     if (content) {
-      await query(
-        "UPDATE messages SET status = 'sent', role = 'assistant', content = $2 WHERE id = $1",
+      result = await query(
+        "UPDATE messages SET status = 'sent', role = 'assistant', content = $2 WHERE id = $1 RETURNING *",
         [id, content]
       );
     } else {
-      await query(
-        "UPDATE messages SET status = 'sent', role = 'assistant' WHERE id = $1",
+      result = await query(
+        "UPDATE messages SET status = 'sent', role = 'assistant' WHERE id = $1 RETURNING *",
         [id]
       );
     }
-    const result = await query("SELECT * FROM messages WHERE id = $1", [id]);
+    
+    if (result.rows.length === 0) {
+      const error = new Error('Draft not found');
+      error.status = 404;
+      throw error;
+    }
+    
     return toCamelCase(result.rows[0]);
   },
 
   async rejectDraft(id) {
-    await query("DELETE FROM messages WHERE id = $1", [id]);
+    const result = await query("DELETE FROM messages WHERE id = $1", [id]);
+    if (result.rowCount === 0) {
+      const error = new Error('Draft not found');
+      error.status = 404;
+      throw error;
+    }
     return { success: true };
   }
 };

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CampaignSender } from './CampaignSender';
 import { mockContacts, mockTemplates } from '@/test/mocks';
@@ -196,8 +196,10 @@ describe('CampaignSender', () => {
       
       expect(screen.getByText(/отправка/i)).toBeInTheDocument();
       
-      // Cleanup
-      resolvePromise!();
+      // Resolve first, then wait for state update
+      await act(async () => {
+        resolvePromise!();
+      });
     });
 
     it('should disable button while sending', async () => {
@@ -222,8 +224,10 @@ describe('CampaignSender', () => {
       // Button should be disabled during sending
       expect(screen.getByRole('button')).toBeDisabled();
       
-      // Cleanup
-      resolvePromise!();
+      // Resolve first, then wait for state update
+      await act(async () => {
+        resolvePromise!();
+      });
     });
   });
 });

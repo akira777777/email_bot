@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { query } from './db.js';
 
 import contactsRouter from './routes/contacts.js';
 import inboxRouter from './routes/inbox.js';

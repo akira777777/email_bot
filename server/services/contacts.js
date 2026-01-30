@@ -51,7 +51,12 @@ export const ContactService = {
   },
 
   async delete(id) {
-    await query('DELETE FROM contacts WHERE id = $1', [id]);
+    const result = await query('DELETE FROM contacts WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      const error = new Error('Contact not found');
+      error.status = 404;
+      throw error;
+    }
     return { success: true };
   }
 };

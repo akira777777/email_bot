@@ -27,11 +27,21 @@ export const TemplateService = {
       'UPDATE templates SET name = $1, subject = $2, body = $3 WHERE id = $4 RETURNING *',
       [name, subject, body, id]
     );
+    if (result.rows.length === 0) {
+      const error = new Error('Template not found');
+      error.status = 404;
+      throw error;
+    }
     return toCamelCase(result.rows[0]);
   },
 
   async delete(id) {
-    await query('DELETE FROM templates WHERE id = $1', [id]);
+    const result = await query('DELETE FROM templates WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      const error = new Error('Template not found');
+      error.status = 404;
+      throw error;
+    }
     return { success: true };
   }
 };
