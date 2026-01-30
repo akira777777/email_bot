@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ContactsList } from './ContactsList';
 import { mockContacts } from '@/test/mocks';
@@ -7,7 +7,7 @@ import { mockContacts } from '@/test/mocks';
 // Mock papaparse
 vi.mock('papaparse', () => ({
   default: {
-    parse: vi.fn((file, options) => {
+    parse: vi.fn((_, options) => {
       options.complete({
         data: [
           { email: 'import@test.com', companyName: 'Import Co', contactPerson: 'Test' },

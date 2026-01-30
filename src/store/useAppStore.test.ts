@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAppStore } from './useAppStore';
 import { mockContacts, mockTemplates } from '@/test/mocks';
+import { Contact } from '@/types';
 
 // Mock the api module
 vi.mock('@/lib/api', () => ({
@@ -60,9 +61,9 @@ describe('useAppStore', () => {
     });
 
     it('should set loading state while fetching', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: Contact[]) => void;
       vi.mocked(api.contacts.getAll).mockImplementation(
-        () => new Promise((resolve) => { resolvePromise = resolve; })
+        () => new Promise<Contact[]>((resolve) => { resolvePromise = resolve; })
       );
 
       const fetchPromise = useAppStore.getState().fetchContacts();
