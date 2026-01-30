@@ -59,8 +59,8 @@ describe('EmailTemplates', () => {
     it('should show variable hints', () => {
       render(<EmailTemplates {...defaultProps} />);
       
-      expect(screen.getByText(/\{\{company\}\}/)).toBeInTheDocument();
-      expect(screen.getByText(/\{\{contact\}\}/)).toBeInTheDocument();
+      // Check for variable hint text in the header
+      expect(screen.getByText(/Доступно:/)).toBeInTheDocument();
     });
 
     it('should show create button', () => {

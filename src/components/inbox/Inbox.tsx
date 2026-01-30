@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Check, X, RefreshCw, Loader2, SendHorizontal } from 'lucide-react';
+import { MessageCircle, Check, X, RefreshCw, Loader2, SendHorizontal, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Message {
