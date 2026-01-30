@@ -249,67 +249,15 @@ export function EmailTemplates({
           </div>
         ) : (
           templates.map((template) => (
-            <div
+            <TemplateCard
               key={template.id}
-              className={cn(
-                "glass-card rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg",
-                selectedTemplate === template.id && "ring-2 ring-primary"
-              )}
-              onClick={() => onSelectTemplate(
-                selectedTemplate === template.id ? null : template.id
-              )}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
-                  </div>
-                  <h4 className="font-medium">{template.name}</h4>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditDialog(template);
-                    }}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteTemplate(template.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">
-                {template.subject}
-              </p>
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {template.body}
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-3 w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  copyToClipboard(template.body);
-                }}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Копировать текст
-              </Button>
-            </div>
+              template={template}
+              isSelected={selectedTemplate === template.id}
+              onSelect={() => onSelectTemplate(selectedTemplate === template.id ? null : template.id)}
+              onEdit={() => openEditDialog(template)}
+              onDelete={() => onDeleteTemplate(template.id)}
+              onCopy={() => copyToClipboard(template.body)}
+            />
           ))
         )}
       </div>
