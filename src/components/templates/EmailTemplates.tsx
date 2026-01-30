@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import { EmailTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit2, Trash2, FileText, Copy } from "lucide-react";
+import { Plus, Edit2, Trash2, FileText, Copy, Code } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
