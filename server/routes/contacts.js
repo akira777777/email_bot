@@ -37,6 +37,31 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.post('/bulk', async (req, res) => {
+  const contacts = req.body; // Array of contact objects
+  if (!Array.isArray(contacts)) {
+    return res.status(400).json({ error: 'Data must be an array' });
+  }
+
+  try {
+    const results = [];
+    // Using a transaction-like approach for bulk insert
+    // For simplicity with pg-pool, we can use a single multi-row insert or a loop with query
+    // Let's use a loop for now but within a single endpoint to reduce roundtrips from frontend
+    for (const contact of contacts) {
+      const { companyName, email, contactPerson, phone } = contact;
+      const result = await query(
+        'INSERT INTO contacts (company_name, email, contact_person, phone) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO UPDATE SET company_name = EXCLUDED.company_name RETURNING *',
+        [companyName, email, contactPerson, phone]
+      );
+      results.push(toCamelCase(result.rows[0]));
+    }
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {

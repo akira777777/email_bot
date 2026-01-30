@@ -35,11 +35,15 @@ export function useContacts() {
   }, []);
 
   const importContacts = useCallback(async (importedContacts: Omit<Contact, "id" | "createdAt" | "status">[]) => {
-    // Sequential upload
-    for (const c of importedContacts) {
-        await api.contacts.create(c);
+    try {
+      setIsLoading(true);
+      await api.contacts.bulkCreate(importedContacts);
+      await fetchContacts();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
     }
-    fetchContacts();
   }, [fetchContacts]);
 
   const selectContact = useCallback((id: string) => {

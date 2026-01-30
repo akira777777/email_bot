@@ -20,6 +20,7 @@ interface Message {
 export function Inbox() {
   const [drafts, setDrafts] = useState<Message[]>([]);
   const [selectedDraft, setSelectedDraft] = useState<Message | null>(null);
+  const [editedContent, setEditedContent] = useState('');
   const [history, setHistory] = useState<Message[]>([]);
   const { toast } = useToast();
 
@@ -38,14 +39,17 @@ export function Inbox() {
 
   useEffect(() => {
     if (selectedDraft) {
+      setEditedContent(selectedDraft.content);
       api.inbox.getHistory(selectedDraft.contactId).then(setHistory);
+    } else {
+      setEditedContent('');
     }
   }, [selectedDraft]);
 
   const handleApprove = async () => {
     if (!selectedDraft) return;
     try {
-      await api.inbox.approveDraft(selectedDraft.id);
+      await api.inbox.approveDraft(selectedDraft.id, editedContent);
       toast({ title: 'Ответ отправлен', description: 'Сообщение успешно отправлено клиенту.' });
       fetchDrafts();
       setSelectedDraft(null);
@@ -147,9 +151,9 @@ export function Inbox() {
               <div className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-900 animate-in fade-in slide-in-from-bottom-4">
                  <h4 className="font-semibold mb-2 text-yellow-800 dark:text-yellow-200">Предложенный ответ (AI)</h4>
                  <Textarea
-                    value={selectedDraft.content}
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
                     className="min-h-[150px] bg-transparent border-none focus-visible:ring-0 resize-none"
-                    readOnly
                  />
               </div>
             </CardContent>

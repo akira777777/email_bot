@@ -91,13 +91,21 @@ router.post('/simulate-incoming', async (req, res) => {
 // Approve draft
 router.post('/drafts/:id/approve', async (req, res) => {
   const { id } = req.params;
+  const { content } = req.body;
   try {
     // Update draft to 'assistant' role and 'queued' status
-    // In real app, we'd trigger Resend/SendGrid here
-    await query(
-      "UPDATE messages SET status = 'sent', role = 'assistant' WHERE id = $1",
-      [id]
-    );
+    // Optionally update content if provided (user edited it)
+    if (content) {
+      await query(
+        "UPDATE messages SET status = 'sent', role = 'assistant', content = $2 WHERE id = $1",
+        [id, content]
+      );
+    } else {
+      await query(
+        "UPDATE messages SET status = 'sent', role = 'assistant' WHERE id = $1",
+        [id]
+      );
+    }
 
     // Fetch updated message to return
     const result = await query("SELECT * FROM messages WHERE id = $1", [id]);

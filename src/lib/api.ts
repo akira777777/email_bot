@@ -10,6 +10,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     }).then(res => res.json()),
+    bulkCreate: (data: Partial<Contact>[]) => fetch(`${API_URL}/contacts/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
     delete: (id: string) => fetch(`${API_URL}/contacts/${id}`, {
       method: 'DELETE'
     }).then(res => res.json()),
@@ -38,8 +43,10 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contactId, content })
     }).then(res => res.json()),
-    approveDraft: (id: string) => fetch(`${API_URL}/inbox/drafts/${id}/approve`, {
-      method: 'POST'
+    approveDraft: (id: string, content?: string) => fetch(`${API_URL}/inbox/drafts/${id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: content ? JSON.stringify({ content }) : undefined
     }).then(res => res.json()),
     rejectDraft: (id: string) => fetch(`${API_URL}/inbox/drafts/${id}`, {
       method: 'DELETE'
