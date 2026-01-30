@@ -138,7 +138,7 @@ describe('App', () => {
       render(<App />);
       
       await waitFor(() => {
-        expect(screen.getByText('Запуск рассылки')).toBeInTheDocument();
+        expect(screen.getByText('Запуск кампании')).toBeInTheDocument();
       });
     });
   });
