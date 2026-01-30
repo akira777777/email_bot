@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Contact, EmailTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +34,15 @@ export function CampaignSender({
   const [previewContact, setPreviewContact] = useState<Contact | null>(null);
 
   const template = templates.find((t) => t.id === selectedTemplate);
-  const selectedContactsList = contacts.filter((c) => selectedContacts.includes(c.id));
-  const newContacts = selectedContactsList.filter((c) => c.status === "new");
+
+  const selectedContactsList = useMemo(() => {
+    const selectedSet = new Set(selectedContacts);
+    return contacts.filter((c) => selectedSet.has(c.id));
+  }, [contacts, selectedContacts]);
+
+  const newContacts = useMemo(() => {
+    return selectedContactsList.filter((c) => c.status === "new");
+  }, [selectedContactsList]);
 
   const canSend = selectedContacts.length > 0 && selectedTemplate && template;
 
