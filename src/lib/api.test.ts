@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { api, ApiError } from './api';
 import { mockContacts, mockTemplates, mockDrafts, mockMessages } from '@/test/mocks';
 
+// The API uses /api prefix by default (VITE_API_URL not set in test)
+const API_URL = '/api';
+
 describe('API Client', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,7 +52,7 @@ describe('API Client', () => {
 
       const result = await api.contacts.getAll();
       expect(result).toEqual(mockContacts);
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3001/api/contacts');
+      expect(fetch).toHaveBeenCalledWith(`${API_URL}/contacts`, undefined);
     });
 
     it('should create a contact', async () => {
@@ -62,7 +65,7 @@ describe('API Client', () => {
       const result = await api.contacts.create(newContact);
       expect(result.companyName).toBe('New Co');
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/contacts',
+        `${API_URL}/contacts`,
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -84,7 +87,7 @@ describe('API Client', () => {
       const result = await api.contacts.bulkCreate(contacts);
       expect(result).toHaveLength(2);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/contacts/bulk',
+        `${API_URL}/contacts/bulk`,
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -98,7 +101,7 @@ describe('API Client', () => {
       const result = await api.contacts.delete('1');
       expect(result.success).toBe(true);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/contacts/1',
+        `${API_URL}/contacts/1`,
         expect.objectContaining({ method: 'DELETE' })
       );
     });
@@ -136,7 +139,7 @@ describe('API Client', () => {
       const result = await api.templates.update('t1', template);
       expect(result.name).toBe('Updated');
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/templates/t1',
+        `${API_URL}/templates/t1`,
         expect.objectContaining({ method: 'PUT' })
       );
     });
@@ -171,7 +174,7 @@ describe('API Client', () => {
 
       const result = await api.inbox.getHistory('1');
       expect(result).toHaveLength(2);
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3001/api/inbox/messages/1');
+      expect(fetch).toHaveBeenCalledWith(`${API_URL}/inbox/messages/1`, undefined);
     });
 
     it('should simulate incoming message', async () => {
@@ -183,7 +186,7 @@ describe('API Client', () => {
       const result = await api.inbox.simulateIncoming('1', 'Test message');
       expect(result).toBeDefined();
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/inbox/simulate-incoming',
+        `${API_URL}/inbox/simulate-incoming`,
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ contactId: '1', content: 'Test message' }),
@@ -199,7 +202,7 @@ describe('API Client', () => {
 
       await api.inbox.approveDraft('d1', 'Edited content');
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/inbox/drafts/d1/approve',
+        `${API_URL}/inbox/drafts/d1/approve`,
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ content: 'Edited content' }),
@@ -215,7 +218,7 @@ describe('API Client', () => {
 
       await api.inbox.approveDraft('d1');
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/inbox/drafts/d1/approve',
+        `${API_URL}/inbox/drafts/d1/approve`,
         expect.objectContaining({
           method: 'POST',
           body: undefined,
@@ -241,9 +244,9 @@ describe('API Client', () => {
         json: () => Promise.resolve({ success: true, sentCount: 3 }),
       });
 
-      const result = await api.campaign.send(['1', '2', '3'], 't1');
+      await api.campaign.send(['1', '2', '3'], 't1');
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3001/api/campaign/send',
+        `${API_URL}/campaign/send`,
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ contactIds: ['1', '2', '3'], templateId: 't1' }),
