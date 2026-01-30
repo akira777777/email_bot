@@ -1,36 +1,46 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Contact } from "@/types";
-import { generateId } from "@/lib/utils";
-import { initialContacts } from "@/data/demo-data";
+import { api } from "@/lib/api";
 
 export function useContacts() {
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const addContact = useCallback((contact: Omit<Contact, "id" | "createdAt" | "status">) => {
-    const newContact: Contact = {
-      ...contact,
-      id: generateId(),
-      status: "new",
-      createdAt: new Date(),
-    };
-    setContacts((prev) => [...prev, newContact]);
+  const fetchContacts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.contacts.getAll();
+      setContacts(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const deleteContact = useCallback((id: string) => {
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
+
+  const addContact = useCallback(async (contact: Omit<Contact, "id" | "createdAt" | "status">) => {
+    await api.contacts.create(contact);
+    fetchContacts();
+  }, [fetchContacts]);
+
+  const deleteContact = useCallback(async (id: string) => {
+    await api.contacts.delete(id);
     setContacts((prev) => prev.filter((c) => c.id !== id));
     setSelectedContacts((prev) => prev.filter((cId) => cId !== id));
   }, []);
 
-  const importContacts = useCallback((importedContacts: Omit<Contact, "id" | "createdAt" | "status">[]) => {
-    const newContacts = importedContacts.map((c) => ({
-      ...c,
-      id: generateId(),
-      status: "new" as const,
-      createdAt: new Date(),
-    }));
-    setContacts((prev) => [...prev, ...newContacts]);
-  }, []);
+  const importContacts = useCallback(async (importedContacts: Omit<Contact, "id" | "createdAt" | "status">[]) => {
+    // Sequential upload
+    for (const c of importedContacts) {
+        await api.contacts.create(c);
+    }
+    fetchContacts();
+  }, [fetchContacts]);
 
   const selectContact = useCallback((id: string) => {
     setSelectedContacts((prev) =>
@@ -53,7 +63,7 @@ export function useContacts() {
 
   return {
     contacts,
-    setContacts, // Exposed for external updates if needed (e.g. campaign send)
+    setContacts,
     selectedContacts,
     setSelectedContacts,
     addContact,
@@ -61,5 +71,7 @@ export function useContacts() {
     importContacts,
     selectContact,
     selectAllContacts,
+    refreshContacts: fetchContacts,
+    isLoading
   };
 }

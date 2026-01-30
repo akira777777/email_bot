@@ -6,6 +6,7 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { ContactsList } from "@/components/contacts/ContactsList";
 import { EmailTemplates } from "@/components/templates/EmailTemplates";
 import { CampaignSender } from "@/components/campaign/CampaignSender";
+import { Inbox } from "@/components/inbox/Inbox";
 import { Toaster } from "@/components/ui/toaster";
 import { 
   Users, 
@@ -17,11 +18,13 @@ import {
 } from "lucide-react";
 import { useContacts } from "@/hooks/useContacts";
 import { useTemplates } from "@/hooks/useTemplates";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function App() {
+  const { toast } = useToast();
   const {
     contacts,
-    setContacts,
     selectedContacts,
     setSelectedContacts,
     addContact,
@@ -29,6 +32,7 @@ export default function App() {
     importContacts,
     selectContact,
     selectAllContacts,
+    refreshContacts
   } = useContacts();
 
   const {
@@ -50,15 +54,32 @@ export default function App() {
   }), [contacts]);
 
   // Campaign handler
-  const handleSendCampaign = (contactIds: string[]) => {
-    setContacts((prev) =>
-      prev.map((c) =>
-        contactIds.includes(c.id)
-          ? { ...c, status: "sent" as const, lastContacted: new Date() }
-          : c
-      )
-    );
-    setSelectedContacts([]);
+  const handleSendCampaign = async (contactIds: string[]) => {
+    if (!selectedTemplate) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите шаблон для рассылки",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await api.campaign.send(contactIds, selectedTemplate);
+      await refreshContacts();
+      setSelectedContacts([]);
+      toast({
+        title: "Успех",
+        description: `Рассылка отправлена ${contactIds.length} контактам`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить рассылку",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -81,10 +102,14 @@ export default function App() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="dashboard">
               <Mail className="h-4 w-4 mr-2" />
               Обзор
+            </TabsTrigger>
+            <TabsTrigger value="inbox">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Входящие
             </TabsTrigger>
             <TabsTrigger value="contacts">
               <Users className="h-4 w-4 mr-2" />
@@ -142,6 +167,11 @@ export default function App() {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          {/* Inbox Tab */}
+          <TabsContent value="inbox" className="space-y-6">
+            <Inbox />
           </TabsContent>
 
           {/* Contacts Tab */}
