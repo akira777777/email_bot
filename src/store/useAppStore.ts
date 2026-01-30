@@ -38,7 +38,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoadingContacts: true });
     try {
       const data = await api.contacts.getAll();
-      set({ contacts: data });
+      set({ contacts: Array.isArray(data) ? data : [] });
     } catch (e) {
       console.error(e);
     } finally {
@@ -87,7 +87,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       await api.contacts.bulkCreate(contacts);
       const data = await api.contacts.getAll();
-      set({ contacts: data });
+      set({ contacts: Array.isArray(data) ? data : [] });
     } finally {
       set({ isLoadingContacts: false });
     }

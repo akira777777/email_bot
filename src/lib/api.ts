@@ -13,13 +13,30 @@ export class ApiError extends Error {
   }
 }
 
+interface ApiErrorResponse {
+  error?: {
+    message?: string;
+    code?: string;
+  } | string;
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, options);
-  const data = await res.json().catch(() => ({}));
+  
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
   
   if (!res.ok) {
-    const message = data.error?.message || data.error || `Request failed with status ${res.status}`;
-    throw new ApiError(message, res.status, data.error?.code);
+    const errorData = data as ApiErrorResponse;
+    const error = errorData.error;
+    const message = (typeof error === 'object' ? error?.message : error) || `Request failed with status ${res.status}`;
+    const code = typeof error === 'object' ? error?.code : undefined;
+    
+    throw new ApiError(message, res.status, code);
   }
   
   return data as T;

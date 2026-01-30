@@ -49,13 +49,16 @@ export default function App() {
   }, [fetchContacts, fetchTemplates]);
 
   // Calculate stats
-  const stats: EmailStats = useMemo(() => ({
-    totalContacts: contacts.length,
-    emailsSent: contacts.filter((c) => c.status !== "new").length,
-    emailsOpened: contacts.filter((c) => ["opened", "replied"].includes(c.status)).length,
-    replies: contacts.filter((c) => c.status === "replied").length,
-    bounced: contacts.filter((c) => c.status === "bounced").length,
-  }), [contacts]);
+  const stats: EmailStats = useMemo(() => {
+    const safeContacts = Array.isArray(contacts) ? contacts : [];
+    return {
+      totalContacts: safeContacts.length,
+      emailsSent: safeContacts.filter((c) => c.status !== "new").length,
+      emailsOpened: safeContacts.filter((c) => ["opened", "replied"].includes(c.status)).length,
+      replies: safeContacts.filter((c) => c.status === "replied").length,
+      bounced: safeContacts.filter((c) => c.status === "bounced").length,
+    };
+  }, [contacts]);
 
   // Campaign handler
   const handleSendCampaign = async (contactIds: string[]) => {
@@ -95,10 +98,11 @@ export default function App() {
   };
 
   const selectAllContacts = () => {
-    if (selectedContacts.length === contacts.length) {
+    const safeContacts = Array.isArray(contacts) ? contacts : [];
+    if (selectedContacts.length === safeContacts.length) {
       setSelectedContacts([]);
     } else {
-      setSelectedContacts(contacts.map(c => c.id));
+      setSelectedContacts(safeContacts.map(c => c.id));
     }
   };
 
