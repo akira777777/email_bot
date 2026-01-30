@@ -18,8 +18,7 @@ export const ContactService = {
     return result.rows.map(toCamelCase);
   },
 
-  async create(data) {
-    const { companyName, email, contactPerson, phone } = data;
+  async create({ companyName, email, contactPerson, phone }) {
     const result = await query(
       'INSERT INTO contacts (company_name, email, contact_person, phone) VALUES ($1, $2, $3, $4) RETURNING *',
       [companyName, email, contactPerson, phone]
@@ -28,16 +27,27 @@ export const ContactService = {
   },
 
   async bulkCreate(contacts) {
-    const results = [];
-    for (const contact of contacts) {
-      const { companyName, email, contactPerson, phone } = contact;
-      const result = await query(
-        'INSERT INTO contacts (company_name, email, contact_person, phone) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO UPDATE SET company_name = EXCLUDED.company_name RETURNING *',
-        [companyName, email, contactPerson, phone]
-      );
-      results.push(toCamelCase(result.rows[0]));
-    }
-    return results;
+    if (contacts.length === 0) return [];
+    
+    // Build parameterized multi-row INSERT for better performance
+    const values = [];
+    const placeholders = contacts.map((contact, i) => {
+      const offset = i * 4;
+      values.push(contact.companyName, contact.email, contact.contactPerson || null, contact.phone || null);
+      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`;
+    });
+    
+    const result = await query(
+      `INSERT INTO contacts (company_name, email, contact_person, phone) 
+       VALUES ${placeholders.join(', ')} 
+       ON CONFLICT (email) DO UPDATE SET 
+         company_name = EXCLUDED.company_name,
+         contact_person = COALESCE(EXCLUDED.contact_person, contacts.contact_person),
+         phone = COALESCE(EXCLUDED.phone, contacts.phone)
+       RETURNING *`,
+      values
+    );
+    return result.rows.map(toCamelCase);
   },
 
   async delete(id) {

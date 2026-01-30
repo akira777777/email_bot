@@ -24,12 +24,22 @@ app.use('/api/templates', templatesRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(`[${new Date().toISOString()}] Error:`, err.message);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
+  
   const status = err.status || 500;
-  const message = process.env.NODE_ENV === 'production' 
-    ? 'Internal Server Error' 
-    : err.message;
-  res.status(status).json({ error: message });
+  const response = {
+    error: {
+      message: process.env.NODE_ENV === 'production' && status === 500
+        ? 'Internal Server Error'
+        : err.message,
+      code: err.code || 'INTERNAL_ERROR'
+    }
+  };
+  
+  res.status(status).json(response);
 });
 
 // Basic health check

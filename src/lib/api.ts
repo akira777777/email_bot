@@ -2,61 +2,84 @@ import { Contact, EmailTemplate } from "@/types";
 
 const API_URL = 'http://localhost:3001/api';
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, options);
+  const data = await res.json().catch(() => ({}));
+  
+  if (!res.ok) {
+    const message = data.error?.message || data.error || `Request failed with status ${res.status}`;
+    throw new ApiError(message, res.status, data.error?.code);
+  }
+  
+  return data as T;
+}
+
 export const api = {
   contacts: {
-    getAll: () => fetch(`${API_URL}/contacts`).then(res => res.json()),
-    create: (data: Partial<Contact>) => fetch(`${API_URL}/contacts`, {
+    getAll: () => request<Contact[]>(`${API_URL}/contacts`),
+    create: (data: Partial<Contact>) => request<Contact>(`${API_URL}/contacts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(res => res.json()),
-    bulkCreate: (data: Partial<Contact>[]) => fetch(`${API_URL}/contacts/bulk`, {
+    }),
+    bulkCreate: (data: Partial<Contact>[]) => request<Contact[]>(`${API_URL}/contacts/bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(res => res.json()),
-    delete: (id: string) => fetch(`${API_URL}/contacts/${id}`, {
+    }),
+    delete: (id: string) => request<{ success: boolean }>(`${API_URL}/contacts/${id}`, {
       method: 'DELETE'
-    }).then(res => res.json()),
+    }),
   },
   templates: {
-    getAll: () => fetch(`${API_URL}/templates`).then(res => res.json()),
-    create: (data: Partial<EmailTemplate>) => fetch(`${API_URL}/templates`, {
+    getAll: () => request<EmailTemplate[]>(`${API_URL}/templates`),
+    create: (data: Partial<EmailTemplate>) => request<EmailTemplate>(`${API_URL}/templates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(res => res.json()),
-    update: (id: string, data: Partial<EmailTemplate>) => fetch(`${API_URL}/templates/${id}`, {
+    }),
+    update: (id: string, data: Partial<EmailTemplate>) => request<EmailTemplate>(`${API_URL}/templates/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(res => res.json()),
-    delete: (id: string) => fetch(`${API_URL}/templates/${id}`, {
+    }),
+    delete: (id: string) => request<{ success: boolean }>(`${API_URL}/templates/${id}`, {
       method: 'DELETE'
-    }).then(res => res.json()),
+    }),
   },
   inbox: {
-    getDrafts: () => fetch(`${API_URL}/inbox/drafts`).then(res => res.json()),
-    getHistory: (contactId: string) => fetch(`${API_URL}/inbox/messages/${contactId}`).then(res => res.json()),
-    simulateIncoming: (contactId: string, content: string) => fetch(`${API_URL}/inbox/simulate-incoming`, {
+    getDrafts: () => request<unknown[]>(`${API_URL}/inbox/drafts`),
+    getHistory: (contactId: string) => request<unknown[]>(`${API_URL}/inbox/messages/${contactId}`),
+    simulateIncoming: (contactId: string, content: string) => request<unknown>(`${API_URL}/inbox/simulate-incoming`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contactId, content })
-    }).then(res => res.json()),
-    approveDraft: (id: string, content?: string) => fetch(`${API_URL}/inbox/drafts/${id}/approve`, {
+    }),
+    approveDraft: (id: string, content?: string) => request<unknown>(`${API_URL}/inbox/drafts/${id}/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: content ? JSON.stringify({ content }) : undefined
-    }).then(res => res.json()),
-    rejectDraft: (id: string) => fetch(`${API_URL}/inbox/drafts/${id}`, {
+    }),
+    rejectDraft: (id: string) => request<{ success: boolean }>(`${API_URL}/inbox/drafts/${id}`, {
       method: 'DELETE'
-    }).then(res => res.json()),
+    }),
   },
   campaign: {
-    send: (contactIds: string[], templateId: string) => fetch(`${API_URL}/campaign/send`, {
+    send: (contactIds: string[], templateId: string) => request<unknown>(`${API_URL}/campaign/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contactIds, templateId })
-    }).then(res => res.json())
+    })
   }
 };
