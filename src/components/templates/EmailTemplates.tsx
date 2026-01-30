@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { EmailTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,75 @@ interface EmailTemplatesProps {
   onSelectTemplate: (id: string | null) => void;
 }
 
+// Memoized template card for better performance
+const TemplateCard = memo(({ 
+  template, 
+  isSelected, 
+  onSelect, 
+  onEdit, 
+  onDelete, 
+  onCopy 
+}: { 
+  template: EmailTemplate;
+  isSelected: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCopy: () => void;
+}) => (
+  <div
+    className={cn(
+      "glass-card rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg",
+      isSelected && "ring-2 ring-primary"
+    )}
+    onClick={onSelect}
+  >
+    <div className="flex items-start justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <FileText className="h-4 w-4 text-primary" />
+        </div>
+        <h4 className="font-medium">{template.name}</h4>
+      </div>
+      <div className="flex gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={(e) => { e.stopPropagation(); onEdit(); }}
+        >
+          <Edit2 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+    <p className="text-sm font-medium text-muted-foreground mb-2">
+      {template.subject}
+    </p>
+    <p className="text-sm text-muted-foreground line-clamp-3">
+      {template.body}
+    </p>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="mt-3 w-full"
+      onClick={(e) => { e.stopPropagation(); onCopy(); }}
+    >
+      <Copy className="h-4 w-4 mr-2" />
+      Копировать текст
+    </Button>
+  </div>
+));
+
+TemplateCard.displayName = "TemplateCard";
+
 export function EmailTemplates({
   templates,
   onAddTemplate,
@@ -43,7 +112,7 @@ export function EmailTemplates({
     body: "",
   });
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     if (!formData.name || !formData.subject || !formData.body) {
       toast({
         title: "Ошибка",
@@ -61,9 +130,9 @@ export function EmailTemplates({
       description: `Шаблон "${formData.name}" успешно создан`,
       variant: "success",
     });
-  };
+  }, [formData, onAddTemplate]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     if (!editingId || !formData.name || !formData.subject || !formData.body) {
       toast({
         title: "Ошибка",
@@ -82,9 +151,9 @@ export function EmailTemplates({
       description: "Изменения сохранены",
       variant: "success",
     });
-  };
+  }, [editingId, formData, onEditTemplate]);
 
-  const openEditDialog = (template: EmailTemplate) => {
+  const openEditDialog = useCallback((template: EmailTemplate) => {
     setEditingId(template.id);
     setFormData({
       name: template.name,
@@ -92,15 +161,15 @@ export function EmailTemplates({
       body: template.body,
     });
     setIsEditOpen(true);
-  };
+  }, []);
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
     toast({
       title: "Скопировано",
       description: "Текст скопирован в буфер обмена",
     });
-  };
+  }, []);
 
   return (
     <div className="space-y-4">
