@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Contact, EmailTemplate, EmailStats } from "@/types";
+import { useMemo } from "react";
+import { EmailStats } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
@@ -15,146 +15,44 @@ import {
   Mail,
   Zap
 } from "lucide-react";
-
-// Generate unique IDs
-const generateId = () => Math.random().toString(36).substring(2, 9);
-
-// Demo data
-const initialContacts: Contact[] = [
-  {
-    id: generateId(),
-    companyName: "ТехСтарт",
-    email: "info@techstart.ru",
-    contactPerson: "Алексей Петров",
-    phone: "+7 (999) 123-45-67",
-    status: "replied",
-    lastContacted: new Date(Date.now() - 86400000),
-    createdAt: new Date(Date.now() - 604800000),
-  },
-  {
-    id: generateId(),
-    companyName: "МедиаГрупп",
-    email: "hello@mediagroup.com",
-    contactPerson: "Мария Сидорова",
-    status: "opened",
-    lastContacted: new Date(Date.now() - 172800000),
-    createdAt: new Date(Date.now() - 604800000),
-  },
-  {
-    id: generateId(),
-    companyName: "ИнноваСофт",
-    email: "contact@innovasoft.ru",
-    contactPerson: "Дмитрий Козлов",
-    status: "sent",
-    lastContacted: new Date(Date.now() - 259200000),
-    createdAt: new Date(Date.now() - 432000000),
-  },
-];
-
-const initialTemplates: EmailTemplate[] = [
-  {
-    id: generateId(),
-    name: "Первое знакомство",
-    subject: "Предложение о сотрудничестве для {{company}}",
-    body: `Здравствуйте, {{contact}}!
-
-Меня зовут [Ваше имя], и я представляю компанию [Название компании]. 
-
-Мы специализируемся на разработке современных веб-приложений и мобильных решений. Изучив деятельность {{company}}, я уверен, что наши услуги могут быть вам полезны.
-
-Предлагаю назначить короткий звонок, чтобы обсудить возможное сотрудничество.
-
-С уважением,
-[Ваше имя]
-[Контактные данные]`,
-    createdAt: new Date(Date.now() - 604800000),
-  },
-];
+import { useContacts } from "@/hooks/useContacts";
+import { useTemplates } from "@/hooks/useTemplates";
 
 export default function App() {
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
-  const [templates, setTemplates] = useState<EmailTemplate[]>(initialTemplates);
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const {
+    contacts,
+    setContacts,
+    selectedContacts,
+    setSelectedContacts,
+    addContact,
+    deleteContact,
+    importContacts,
+    selectContact,
+    selectAllContacts,
+  } = useContacts();
+
+  const {
+    templates,
+    selectedTemplate,
+    setSelectedTemplate,
+    addTemplate,
+    editTemplate,
+    deleteTemplate,
+  } = useTemplates();
 
   // Calculate stats
-  const stats: EmailStats = {
+  const stats: EmailStats = useMemo(() => ({
     totalContacts: contacts.length,
     emailsSent: contacts.filter((c) => c.status !== "new").length,
     emailsOpened: contacts.filter((c) => ["opened", "replied"].includes(c.status)).length,
     replies: contacts.filter((c) => c.status === "replied").length,
     bounced: contacts.filter((c) => c.status === "bounced").length,
-  };
-
-  // Contact handlers
-  const handleAddContact = (contact: Omit<Contact, "id" | "createdAt" | "status">) => {
-    const newContact: Contact = {
-      ...contact,
-      id: generateId(),
-      status: "new",
-      createdAt: new Date(),
-    };
-    setContacts([...contacts, newContact]);
-  };
-
-  const handleDeleteContact = (id: string) => {
-    setContacts(contacts.filter((c) => c.id !== id));
-    setSelectedContacts(selectedContacts.filter((cId) => cId !== id));
-  };
-
-  const handleImportContacts = (importedContacts: Omit<Contact, "id" | "createdAt" | "status">[]) => {
-    const newContacts: Contact[] = importedContacts.map((c) => ({
-      ...c,
-      id: generateId(),
-      status: "new" as const,
-      createdAt: new Date(),
-    }));
-    setContacts([...contacts, ...newContacts]);
-  };
-
-  const handleSelectContact = (id: string) => {
-    setSelectedContacts((prev) =>
-      prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAllContacts = () => {
-    if (selectedContacts.length === contacts.length) {
-      setSelectedContacts([]);
-    } else {
-      setSelectedContacts(contacts.map((c) => c.id));
-    }
-  };
-
-  // Template handlers
-  const handleAddTemplate = (template: Omit<EmailTemplate, "id" | "createdAt">) => {
-    const newTemplate: EmailTemplate = {
-      ...template,
-      id: generateId(),
-      createdAt: new Date(),
-    };
-    setTemplates([...templates, newTemplate]);
-  };
-
-  const handleEditTemplate = (id: string, template: Omit<EmailTemplate, "id" | "createdAt">) => {
-    setTemplates(
-      templates.map((t) =>
-        t.id === id ? { ...t, ...template } : t
-      )
-    );
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    setTemplates(templates.filter((t) => t.id !== id));
-    if (selectedTemplate === id) {
-      setSelectedTemplate(null);
-    }
-  };
+  }), [contacts]);
 
   // Campaign handler
-  const handleSendCampaign = (contactIds: string[], templateId: string) => {
-    setContacts(
-      contacts.map((c) =>
+  const handleSendCampaign = (contactIds: string[]) => {
+    setContacts((prev) =>
+      prev.map((c) =>
         contactIds.includes(c.id)
           ? { ...c, status: "sent" as const, lastContacted: new Date() }
           : c
@@ -250,12 +148,12 @@ export default function App() {
           <TabsContent value="contacts">
             <ContactsList
               contacts={contacts}
-              onAddContact={handleAddContact}
-              onDeleteContact={handleDeleteContact}
-              onImportContacts={handleImportContacts}
+              onAddContact={addContact}
+              onDeleteContact={deleteContact}
+              onImportContacts={importContacts}
               selectedContacts={selectedContacts}
-              onSelectContact={handleSelectContact}
-              onSelectAll={handleSelectAllContacts}
+              onSelectContact={selectContact}
+              onSelectAll={selectAllContacts}
             />
           </TabsContent>
 
@@ -263,9 +161,9 @@ export default function App() {
           <TabsContent value="templates" className="space-y-6">
             <EmailTemplates
               templates={templates}
-              onAddTemplate={handleAddTemplate}
-              onEditTemplate={handleEditTemplate}
-              onDeleteTemplate={handleDeleteTemplate}
+              onAddTemplate={addTemplate}
+              onEditTemplate={editTemplate}
+              onDeleteTemplate={deleteTemplate}
               selectedTemplate={selectedTemplate}
               onSelectTemplate={setSelectedTemplate}
             />
@@ -274,12 +172,12 @@ export default function App() {
               <div className="lg:col-span-2">
                 <ContactsList
                   contacts={contacts}
-                  onAddContact={handleAddContact}
-                  onDeleteContact={handleDeleteContact}
-                  onImportContacts={handleImportContacts}
+                  onAddContact={addContact}
+                  onDeleteContact={deleteContact}
+                  onImportContacts={importContacts}
                   selectedContacts={selectedContacts}
-                  onSelectContact={handleSelectContact}
-                  onSelectAll={handleSelectAllContacts}
+                  onSelectContact={selectContact}
+                  onSelectAll={selectAllContacts}
                 />
               </div>
               <div>
