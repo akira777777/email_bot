@@ -1,17 +1,8 @@
 import { useState, useMemo } from "react";
 import { Contact, EmailTemplate } from "@/types";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Send, Mail, Users, FileText, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Send, Users, FileText, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CampaignSenderProps {
@@ -19,7 +10,7 @@ interface CampaignSenderProps {
   selectedContacts: string[];
   templates: EmailTemplate[];
   selectedTemplate: string | null;
-  onSendCampaign: (contactIds: string[], templateId: string) => void;
+  onSendCampaign: (contactIds: string[], templateId: string) => Promise<void>;
 }
 
 export function CampaignSender({
@@ -29,205 +20,118 @@ export function CampaignSender({
   selectedTemplate,
   onSendCampaign,
 }: CampaignSenderProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [previewContact, setPreviewContact] = useState<Contact | null>(null);
 
-  const template = templates.find((t) => t.id === selectedTemplate);
+  const selectedTemplateData = useMemo(() => 
+    templates.find(t => t.id === selectedTemplate),
+    [templates, selectedTemplate]
+  );
 
-  const selectedContactsList = useMemo(() => {
+  const targetContacts = useMemo(() => {
     const selectedSet = new Set(selectedContacts);
-    return contacts.filter((c) => selectedSet.has(c.id));
+    return contacts.filter(c => selectedSet.has(c.id));
   }, [contacts, selectedContacts]);
 
-  const newContacts = useMemo(() => {
-    return selectedContactsList.filter((c) => c.status === "new");
-  }, [selectedContactsList]);
-
-  const canSend = selectedContacts.length > 0 && selectedTemplate && template;
-
-  const getPreviewText = (text: string, contact: Contact) => {
-    return text
-      .replace(/\{\{company\}\}/g, contact.companyName)
-      .replace(/\{\{contact\}\}/g, contact.contactPerson || "Уважаемый клиент")
-      .replace(/\{\{email\}\}/g, contact.email);
-  };
-
   const handleSend = async () => {
-    if (!canSend || !template) return;
-
+    if (selectedContacts.length === 0 || !selectedTemplate || isSending) return;
+    
     setIsSending(true);
-    
-    // Simulate sending delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    onSendCampaign(selectedContacts, selectedTemplate);
-    
-    setIsSending(false);
-    setIsOpen(false);
-    
-    toast({
-      title: "Рассылка запущена",
-      description: `Отправлено ${selectedContacts.length} писем`,
-      variant: "success",
-    });
+    try {
+      await onSendCampaign(selectedContacts, selectedTemplate);
+    } finally {
+      setIsSending(false);
+    }
   };
+
+  const canSend = selectedContacts.length > 0 && !!selectedTemplate && !isSending;
 
   return (
-    <div className="glass-card rounded-xl p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent">
-          <Send className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-lg">Запуск рассылки</h3>
-          <p className="text-sm text-muted-foreground">
-            Отправьте письма выбранным контактам
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-          <Users className={cn(
-            "h-5 w-5",
-            selectedContacts.length > 0 ? "text-success" : "text-muted-foreground"
-          )} />
-          <div className="flex-1">
-            <p className="text-sm font-medium">Получатели</p>
-            <p className="text-sm text-muted-foreground">
-              {selectedContacts.length > 0
-                ? `Выбрано ${selectedContacts.length} контактов (${newContacts.length} новых)`
-                : "Выберите контакты из списка"}
-            </p>
+    <Card className="border-primary/20 shadow-xl shadow-primary/5 overflow-hidden animate-in fade-in duration-700 h-full">
+      <CardHeader className="bg-primary/5 border-b border-primary/10">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Send className="h-5 w-5 text-primary" />
+          Запуск кампании
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-6 space-y-6">
+        {/* Selection Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-muted/50 border border-border/50">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Получатели</span>
+            </div>
+            <div className="text-2xl font-bold">{selectedContacts.length}</div>
           </div>
-          {selectedContacts.length > 0 && (
-            <CheckCircle2 className="h-5 w-5 text-success" />
+          <div className="p-4 rounded-2xl bg-muted/50 border border-border/50">
+            <div className="flex items-center gap-2 mb-1">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Шаблон</span>
+            </div>
+            <div className="text-sm font-bold truncate">
+              {selectedTemplateData ? selectedTemplateData.name : "Не выбран"}
+            </div>
+          </div>
+        </div>
+
+        {/* Validation Messages */}
+        <div className="space-y-2">
+          {!selectedTemplate && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Выберите шаблон во вкладке "Рассылка"
+            </div>
+          )}
+          {selectedContacts.length === 0 && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Выберите хотя бы одного контакта
+            </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-          <FileText className={cn(
-            "h-5 w-5",
-            template ? "text-success" : "text-muted-foreground"
-          )} />
-          <div className="flex-1">
-            <p className="text-sm font-medium">Шаблон письма</p>
-            <p className="text-sm text-muted-foreground">
-              {template ? template.name : "Выберите шаблон письма"}
-            </p>
-          </div>
-          {template && <CheckCircle2 className="h-5 w-5 text-success" />}
-        </div>
-
-        {!canSend && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 text-warning">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm">
-              {!selectedContacts.length
-                ? "Выберите хотя бы один контакт"
-                : "Выберите шаблон письма"}
-            </p>
-          </div>
-        )}
-
-        <Button
-          variant="gradient"
-          size="lg"
-          className="w-full"
-          disabled={!canSend}
-          onClick={() => setIsOpen(true)}
-        >
-          <Mail className="h-5 w-5 mr-2" />
-          Отправить {selectedContacts.length > 0 ? `(${selectedContacts.length})` : ""}
-        </Button>
-      </div>
-
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Подтверждение рассылки</DialogTitle>
-            <DialogDescription>
-              Проверьте параметры перед отправкой
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-muted">
-                <p className="text-sm text-muted-foreground mb-1">Получатели</p>
-                <p className="text-2xl font-bold">{selectedContacts.length}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted">
-                <p className="text-sm text-muted-foreground mb-1">Шаблон</p>
-                <p className="font-medium truncate">{template?.name}</p>
-              </div>
+        {/* Preview Info */}
+        {selectedTemplateData && selectedContacts.length > 0 && (
+          <div className="p-4 rounded-2xl border border-primary/10 bg-primary/5 space-y-3">
+            <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Предпросмотр первого письма
             </div>
-
-            {template && selectedContactsList.length > 0 && (
-              <div className="space-y-2">
-                <Label>Предпросмотр письма</Label>
-                <div className="p-4 rounded-lg border bg-background space-y-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Кому:</p>
-                    <select 
-                      className="w-full text-sm bg-transparent border-none p-0 focus:outline-none"
-                      onChange={(e) => {
-                        const contact = selectedContactsList.find(c => c.id === e.target.value);
-                        setPreviewContact(contact || null);
-                      }}
-                    >
-                      {selectedContactsList.slice(0, 10).map((contact) => (
-                        <option key={contact.id} value={contact.id}>
-                          {contact.email} ({contact.companyName})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Тема:</p>
-                    <p className="font-medium">
-                      {getPreviewText(template.subject, previewContact || selectedContactsList[0])}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Текст:</p>
-                    <p className="text-sm whitespace-pre-wrap">
-                      {getPreviewText(template.body, previewContact || selectedContactsList[0])}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-info/10 text-info">
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
-              <p className="text-sm">
-                Для реальной отправки подключите email-сервис (SendGrid, Mailgun или Resend)
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-foreground">
+                Кому: <span className="font-normal opacity-70">{targetContacts[0]?.email}</span>
+              </p>
+              <p className="text-xs font-bold text-foreground">
+                Тема: <span className="font-normal opacity-70">
+                  {selectedTemplateData.subject.replace('{{company}}', targetContacts[0]?.companyName || '')}
+                </span>
               </p>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSending}>
-              Отмена
-            </Button>
-            <Button onClick={handleSend} disabled={isSending}>
-              {isSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Отправка...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Отправить
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        )}
+      </CardContent>
+      <CardFooter className="bg-muted/30 border-t border-border/50 p-6 mt-auto">
+        <Button 
+          onClick={handleSend} 
+          disabled={!canSend}
+          className={cn(
+            "w-full h-12 rounded-xl font-bold transition-all duration-300",
+            canSend ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" : "opacity-50"
+          )}
+        >
+          {isSending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Отправка...
+            </>
+          ) : (
+            <>
+              <Send className="mr-2 h-4 w-4" />
+              Запустить рассылку
+            </>
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

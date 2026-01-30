@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback } from "react";
+import { useState, memo, useCallback } from "react";
 import { EmailTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,146 +128,92 @@ export function EmailTemplates({
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    subject: "",
-    body: "",
-  });
+  const [formData, setFormData] = useState({ name: "", subject: "", body: "" });
 
   const handleAdd = useCallback(() => {
     if (!formData.name || !formData.subject || !formData.body) {
-      toast({
-        title: "Ошибка",
-        description: "Заполните все поля шаблона",
-        variant: "destructive",
-      });
+      toast({ title: "Ошибка", description: "Заполните все поля", variant: "destructive" });
       return;
     }
     
     onAddTemplate(formData);
     setFormData({ name: "", subject: "", body: "" });
     setIsAddOpen(false);
-    toast({
-      title: "Шаблон создан",
-      description: `Шаблон "${formData.name}" успешно создан`,
-      variant: "success",
-    });
+    toast({ title: "Готово", description: "Шаблон успешно создан" });
   }, [formData, onAddTemplate]);
 
   const handleEdit = useCallback(() => {
-    if (!editingId || !formData.name || !formData.subject || !formData.body) {
-      toast({
-        title: "Ошибка",
-        description: "Заполните все поля шаблона",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+    if (!editingId || !formData.name || !formData.subject || !formData.body) return;
     onEditTemplate(editingId, formData);
-    setFormData({ name: "", subject: "", body: "" });
     setEditingId(null);
     setIsEditOpen(false);
-    toast({
-      title: "Шаблон обновлён",
-      description: "Изменения сохранены",
-      variant: "success",
-    });
+    toast({ title: "Обновлено", description: "Изменения сохранены" });
   }, [editingId, formData, onEditTemplate]);
 
   const openEditDialog = useCallback((template: EmailTemplate) => {
     setEditingId(template.id);
-    setFormData({
-      name: template.name,
-      subject: template.subject,
-      body: template.body,
-    });
+    setFormData({ name: template.name, subject: template.subject, body: template.body });
     setIsEditOpen(true);
   }, []);
 
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Скопировано",
-      description: "Текст скопирован в буфер обмена",
-    });
+    toast({ title: "Скопировано", description: "Текст в буфере обмена" });
   }, []);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between bg-card/30 p-4 rounded-2xl border border-border/50">
         <div>
-          <h3 className="text-lg font-semibold">Шаблоны писем</h3>
-          <p className="text-sm text-muted-foreground">
-            Используйте переменные: {"{{company}}"}, {"{{contact}}"}, {"{{email}}"}
-          </p>
+          <h3 className="text-lg font-bold tracking-tight">Шаблоны писем</h3>
+          <div className="flex items-center gap-2 mt-1">
+             <Code className="h-3 w-3 text-primary" />
+             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+               Доступно: {"{{company}}"}, {"{{contact}}"}, {"{{email}}"}
+             </p>
+          </div>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
-            <Button variant="gradient">
+            <Button variant="gradient" className="rounded-xl shadow-lg shadow-primary/20">
               <Plus className="h-4 w-4 mr-2" />
-              Новый шаблон
+              Создать
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Создать шаблон</DialogTitle>
-              <DialogDescription>
-                Создайте шаблон письма для массовой рассылки
-              </DialogDescription>
+              <DialogTitle>Новый шаблон</DialogTitle>
+              <DialogDescription>Подготовьте сообщение для ваших клиентов</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-6 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Название шаблона</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Например: Первое знакомство"
-                />
+                <Label htmlFor="name">Название</Label>
+                <Input id="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Напр: Приветствие" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="subject">Тема письма</Label>
-                <Input
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Предложение о сотрудничестве для {{company}}"
-                />
+                <Input id="subject" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} placeholder="Для команды {{company}}" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="body">Текст письма</Label>
-                <Textarea
-                  id="body"
-                  value={formData.body}
-                  onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                  placeholder="Здравствуйте, {{contact}}!
-
-Меня зовут [Ваше имя], и я хотел бы предложить вам сотрудничество...
-
-С уважением,
-[Подпись]"
-                  className="min-h-[200px]"
-                />
+                <Label htmlFor="body">Текст</Label>
+                <Textarea id="body" value={formData.body} onChange={e => setFormData({ ...formData, body: e.target.value })} className="min-h-[200px]" />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-                Отмена
-              </Button>
-              <Button onClick={handleAdd}>Создать</Button>
+              <Button variant="outline" onClick={() => setIsAddOpen(false)}>Отмена</Button>
+              <Button onClick={handleAdd}>Сохранить</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {templates.length === 0 ? (
-          <div className="col-span-full glass-card rounded-xl p-8 text-center">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              Создайте первый шаблон письма для начала рассылки
-            </p>
+          <div className="col-span-full border-2 border-dashed border-border/50 rounded-3xl p-12 text-center flex flex-col items-center gap-4">
+            <div className="p-4 rounded-full bg-muted/50 text-muted-foreground/30">
+              <FileText className="h-12 w-12" />
+            </div>
+            <p className="text-muted-foreground text-sm font-medium">У вас пока нет шаблонов</p>
           </div>
         ) : (
           templates.map((template) => (
@@ -287,42 +233,24 @@ export function EmailTemplates({
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Редактировать шаблон</DialogTitle>
-            <DialogDescription>
-              Внесите изменения в шаблон письма
-            </DialogDescription>
+            <DialogTitle>Редактирование</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-name">Название шаблона</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
+              <Label htmlFor="edit-name">Название</Label>
+              <Input id="edit-name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-subject">Тема письма</Label>
-              <Input
-                id="edit-subject"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              />
+              <Label htmlFor="edit-subject">Тема</Label>
+              <Input id="edit-subject" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-body">Текст письма</Label>
-              <Textarea
-                id="edit-body"
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                className="min-h-[200px]"
-              />
+              <Label htmlFor="edit-body">Текст</Label>
+              <Textarea id="edit-body" value={formData.body} onChange={e => setFormData({ ...formData, body: e.target.value })} className="min-h-[200px]" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Отмена
-            </Button>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Отмена</Button>
             <Button onClick={handleEdit}>Сохранить</Button>
           </DialogFooter>
         </DialogContent>
