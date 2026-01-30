@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Upload, Trash2, Search, Mail, MoreVertical } from "lucide-react";
+import { Plus, Upload, Trash2, Search, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import Papa from "papaparse";
@@ -93,13 +93,13 @@ export function ContactsList({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    Papa.parse(file, {
+    Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         const importedContacts: Omit<Contact, "id" | "createdAt" | "status">[] = [];
         
-        results.data.forEach((row: Record<string, string>) => {
+        results.data.forEach((row) => {
           const email = row.email || row.Email || row.EMAIL || row["E-mail"];
           const companyName = row.companyName || row.company || row.Company || row["Компания"] || row["Название"];
           
