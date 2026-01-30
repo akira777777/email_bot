@@ -47,7 +47,7 @@ describe('EmailTemplates', () => {
     it('should show empty state when no templates', () => {
       render(<EmailTemplates {...defaultProps} templates={[]} />);
       
-      expect(screen.getByText(/создайте первый шаблон/i)).toBeInTheDocument();
+      expect(screen.getByText(/у вас пока нет шаблонов/i)).toBeInTheDocument();
     });
 
     it('should show variable hints', () => {

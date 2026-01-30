@@ -26,7 +26,7 @@ describe('CampaignSender', () => {
     it('should render campaign sender card', () => {
       render(<CampaignSender {...defaultProps} />);
       
-      expect(screen.getByText('Запуск рассылки')).toBeInTheDocument();
+      expect(screen.getByText('Запуск кампании')).toBeInTheDocument();
     });
 
     it('should show recipients section', () => {
@@ -38,7 +38,7 @@ describe('CampaignSender', () => {
     it('should show template section', () => {
       render(<CampaignSender {...defaultProps} />);
       
-      expect(screen.getByText('Шаблон письма')).toBeInTheDocument();
+      expect(screen.getByText('Шаблон')).toBeInTheDocument();
     });
 
     it('should show send button', () => {
