@@ -26,7 +26,6 @@ interface EmailTemplatesProps {
   onSelectTemplate: (id: string | null) => void;
 }
 
-// Memoized template card for better performance
 const TemplateCard = memo(({ 
   template, 
   isSelected, 
@@ -35,60 +34,83 @@ const TemplateCard = memo(({
   onDelete, 
   onCopy 
 }: { 
-  template: EmailTemplate;
-  isSelected: boolean;
-  onSelect: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onCopy: () => void;
+  template: EmailTemplate, 
+  isSelected: boolean, 
+  onSelect: () => void, 
+  onEdit: () => void, 
+  onDelete: () => void, 
+  onCopy: () => void 
 }) => (
   <div
     className={cn(
-      "glass-card rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg",
-      isSelected && "ring-2 ring-primary"
+      "glass-card rounded-2xl p-5 cursor-pointer transition-all duration-300 group border border-border/50 shadow-sm",
+      isSelected ? "ring-2 ring-primary bg-primary/5 shadow-primary/10 border-primary/20" : "hover:shadow-md hover:border-border"
     )}
     onClick={onSelect}
   >
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <FileText className="h-4 w-4 text-primary" />
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className={cn(
+          "p-2.5 rounded-xl transition-colors",
+          isSelected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary group-hover:bg-primary/20"
+        )}>
+          <FileText className="h-5 w-5" />
         </div>
-        <h4 className="font-medium">{template.name}</h4>
+        <div>
+          <h4 className="font-bold text-sm tracking-tight">{template.name}</h4>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">Шаблон</p>
+        </div>
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
         >
           <Edit2 className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-destructive"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
     </div>
-    <p className="text-sm font-medium text-muted-foreground mb-2">
-      {template.subject}
-    </p>
-    <p className="text-sm text-muted-foreground line-clamp-3">
-      {template.body}
-    </p>
+    
+    <div className="space-y-3">
+      <div>
+        <Label className="text-[10px] uppercase text-muted-foreground font-bold mb-1 block">Тема</Label>
+        <p className="text-xs font-semibold line-clamp-1">{template.subject}</p>
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase text-muted-foreground font-bold mb-1 block">Контент</Label>
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed italic">
+          "{template.body}"
+        </p>
+      </div>
+    </div>
+
     <Button
       variant="ghost"
       size="sm"
-      className="mt-3 w-full"
-      onClick={(e) => { e.stopPropagation(); onCopy(); }}
+      className="mt-5 w-full bg-muted/30 hover:bg-muted text-[10px] uppercase font-bold tracking-widest h-8"
+      onClick={(e) => {
+        e.stopPropagation();
+        onCopy();
+      }}
     >
-      <Copy className="h-4 w-4 mr-2" />
-      Копировать текст
+      <Copy className="h-3.5 w-3.5 mr-2" />
+      Копировать
     </Button>
   </div>
 ));
