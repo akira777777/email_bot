@@ -162,21 +162,44 @@ export function ContactsList({
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        let invalidCount = 0;
+
         const imported = results.data
           .map(row => ({
-            email: row.email || row.Email || row.EMAIL || row["E-mail"],
-            companyName: row.companyName || row.company || row.Company || row["Компания"] || row["Название"],
-            contactPerson: row.contactPerson || row.contact || row["Контакт"] || row["Имя"],
-            phone: row.phone || row.Phone || row["Телефон"],
-            notes: row.notes || row.Notes || row["Заметки"],
+            email: (row.email || row.Email || row.EMAIL || row["E-mail"] || "").trim(),
+            companyName: (row.companyName || row.company || row.Company || row["Компания"] || row["Название"] || "").trim(),
+            contactPerson: (row.contactPerson || row.contact || row["Контакт"] || row["Имя"] || "").trim(),
+            phone: (row.phone || row.Phone || row["Телефон"] || "").trim(),
+            notes: (row.notes || row.Notes || row["Заметки"] || "").trim(),
           }))
-          .filter(c => c.email && c.companyName) as ContactInput[];
+          .filter(c => {
+            const isValid = c.email && emailRegex.test(c.email) && c.companyName;
+            if (!isValid) invalidCount++;
+            return isValid;
+          }) as ContactInput[];
 
         if (imported.length > 0) {
-          onImportContacts(imported);
-          toast({ title: "Импорт завершён", description: `Добавлено ${imported.length} контактов` });
+          const BATCH_SIZE = 30;
+          let batchCount = 0;
+
+          // Process in batches
+          for (let i = 0; i < imported.length; i += BATCH_SIZE) {
+            const batch = imported.slice(i, i + BATCH_SIZE);
+            onImportContacts(batch);
+            batchCount++;
+          }
+
+          toast({
+            title: "Импорт завершён",
+            description: `Обработано ${imported.length} контактов в ${batchCount} пакет(ах). ${invalidCount > 0 ? `Пропущено ${invalidCount} некорректных строк.` : ''}`
+          });
         } else {
-          toast({ title: "Ошибка импорта", description: "Некорректный формат файла", variant: "destructive" });
+          toast({
+            title: "Ошибка импорта",
+            description: "Не найдено корректных данных (требуются email и название компании)",
+            variant: "destructive"
+          });
         }
       },
       error: () => toast({ title: "Ошибка", description: "Не удалось прочитать файл", variant: "destructive" }),
