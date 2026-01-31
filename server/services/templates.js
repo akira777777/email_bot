@@ -14,6 +14,12 @@ export const TemplateService = {
     return result.rows.map(toCamelCase);
   },
 
+  async getById(id) {
+    const result = await query('SELECT * FROM templates WHERE id = $1', [id]);
+    if (result.rows.length === 0) return null;
+    return toCamelCase(result.rows[0]);
+  },
+
   async create({ name, subject, body }) {
     const result = await query(
       'INSERT INTO templates (name, subject, body) VALUES ($1, $2, $3) RETURNING *',
